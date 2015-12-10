@@ -25,32 +25,30 @@ urls = dict(
 
 elements = dict(
     cg=dict(
-        cancel_key=".//*[@id='account']/div[1]/div[2]/div[3]/div[3]/button[2]",
-        check_login=".//*[@id='nav-logout']/a",
-        login="/html/body/div[1]/div/div/div[2]/form/div/input[1]",
-        passwd="/html/body/div[1]/div/div/div[2]/form/div/input[2]",
-        button_login="/html/body/div[1]/div/div/div[2]/form/div/button",
-        show_keys_form="/html/body/div[1]/div/div/div[1]/div[3]/div[1]/div[1]/div[2]/div[1]/div[3]/a",
-        input_key="/html/body/div[1]/div/div/div[1]/div[3]/div[1]/div[1]/div[2]/div[3]/div[2]/input",
-        button_key="/html/body/div[1]/div/div/div[1]/div[3]/div[1]/div[1]/div[2]/div[3]/div[3]/button[1]",
-        alert_text="/html/body/div[4]/div/div/div[2]/div/strong",
-        alert_button="/html/body/div[4]/div/div/div[3]/button",
-        activation_button="/html/body/div[4]/div/div/div[3]/button[1]",
-        plan_text="/html/body/div[1]/div/div/div[1]/div[3]/div[1]/div[1]/div[2]/div[1]/div[2]"),
+        username=".//*[@id='loginForm']/div/input[1]",
+        password=".//*[@id='loginForm']/div/input[2]",
+        btn_signin=".//*[@id='loginForm']/div/button",
+        login_text=".//*[@id='nav-logout']/a",
+
+        key_input_show=".//*[@id='account']/div[1]/div[2]/div[1]/div[3]/a",
+        key_input=".//*[@id='account']/div[1]/div[2]/div[3]/div[2]/input",
+        key_send=".//*[@id='account']/div[1]/div[2]/div[3]/div[3]/button[1]",
+
+        alert_text=".//*[@id='ng-app']/body/div[4]/div/div/div[1]/h3",
+        alert_btn_cancel=".//*[@id='ng-app']/body/div[4]/div/div/div[3]/button",
+        alert_btn_ok=".//*[@id='ng-app']/body/div[4]/div/div/div[3]/button[1]",
+
+        plan_name=".//*[@id='account']/div[1]/div[2]/div[1]/div[2]"),
+
     rs=dict(
-        max_page=".//*[@id='board_index']/div[1]/div/div[2]/ol/li[1]/a",
-        keys='.//blockquote/p/span[@class="texthide"]',
         is_login="/html/body/div[2]/form[1]/fieldset/dl/dt[1]/a/b",
         input_login="/html/body/div[2]/form[1]/fieldset/label[1]/input",
         input_passwd="/html/body/div[2]/form[1]/fieldset/label[2]/input",
         btn="/html/body/div[2]/form[1]/fieldset/div[1]/span/span/input")
 )
 
-result_text = dict(not_found="Activation key not found",
-                   activated="Activation key already used",
-                   done="Activate your subscription")
-
-plan_text = "Free Plan"
+result_text = dict(activated="Activation",
+                   done="activate")
 
 headers = [(
     'User-agent',
@@ -80,44 +78,44 @@ def write_to_file(fname, text):
 
 
 def input_wait(msg):
-    msg[0] = input("Type to quit: ")
-
+    msg[0] = input("Type to quit:\n")
+    if "None" not in msg:
+        print("Программа будет завершена...")
 
 if __name__ == "__main__":
     loger = Logger()
 
-    cg_users = get_cg_user(files["users"])
-    if not cg_users:
-        loger.store("E", "SYSTEM", "No cyberghost account!")
-        exit(1)
+    # cg_users = get_cg_user(files["users"])
+    # if not cg_users:
+    #     loger.store("E", "SYSTEM", "No cyberghost account!")
+    #     exit(1)
     #
     # cg = CyberGhost(
     #     loger=loger,
     #     elements=elements["cg"],
     #     result_text=result_text,
-    #     plan_text=plan_text,
     #     url=urls["cyber"]
     # )
 
-    test_key = "CHZ-NP3KF-9NQWS-2HTS7-LVPGQ-XHTR6"
+    # test_key = "CHIPX2015-YJ8QE-UGDJ8-RBDCB-BBSM2-HXNFC"
+    import sys
     msg = ['None']
+    m = Thread(target=input_wait, args=(msg,))
+    m.setDaemon(True)
+    m.start()
     while True:
         try:
-            m = Thread(target=input_wait, args=(msg,))
-            m.start()
             for i in range(interval):
                 if "None" not in msg:
                     raise KeyboardInterrupt
                 sleep(1)
-            if m.isAlive():
-                m.join(2)
             print(msg)
         except KeyboardInterrupt:
             print("Bye")
+            print(msg)
+            sys.exit(1)
 
     # cg.driver_start()
-    # cg.login(cg_users)
+    # cg.login(tuple(cg_users.split(":")))
     # cg.run_check(test_key)
     # cg.driver_stop()
-
-
