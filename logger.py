@@ -17,10 +17,10 @@ class Logger(object):
         super(Logger, self).__init__()
         self.logfile = logfile
 
-    def store(self, type, system, msg):
+    def store(self, type, system, subsystem, msg):
         time = str(datetime.now())
         msg = str(msg) + '\n'
-        text = (time, type, system, msg,)
+        text = (time, type, system, subsystem, msg,)
         with open(self.logfile, "a") as file:
             file.write(' '.join(text))
-        print(text)
+        print(' '.join(text))

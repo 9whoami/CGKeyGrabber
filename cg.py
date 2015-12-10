@@ -1,7 +1,6 @@
 # -*- coding: cp1251 -*-
 __author__ = 'whoami'
 
-from time import sleep
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.common import exceptions
@@ -11,12 +10,12 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 class CyberGhost(object):
-    def __init__(self, loger, elements, result_text, plan_text, url):
+    def __init__(self, loger, elements, result_text, url):
         super(CyberGhost, self).__init__()
         self.loger = loger
         self.elements = elements
         self.result_text = result_text
-        self.plan_text = plan_text
+        self.plan_text = "Free"
         self.url = url
         self.response_timeout = 5
         self.max_script_run = 5
@@ -28,9 +27,11 @@ class CyberGhost(object):
         self.driver.execute_script('window.stop();')
 
     def driver_stop(self):
+        self.loger.store("I", "CG", "driver_stop", "Остановка драйвера")
         self.driver.close()
 
     def driver_start(self):
+        self.loger.store("I", "CG", "driver_start", "Запуск драйвера...")
         fp = webdriver.FirefoxProfile()
         fp.set_preference("http.response.timeout", self.response_timeout)
         fp.set_preference("dom.max_script_run_time", self.max_script_run)
@@ -41,15 +42,18 @@ class CyberGhost(object):
 
     def login(self, userinfo):
         user_name, password = userinfo
-        self.loger.store("I", "CG::login", "Sign in username:%s, password:%s"
-                         % (user_name, password))
+        self.loger.store("I", "CG", "login", "Вход на сайт username:%s, "
+                                             "password:%s" % (user_name,
+                                                              password)
+                         )
         self.driver.get(self.url)
-        try:
-            login = self.get_element(self.elements["login"])
-            passwd = self.get_element(self.elements["passwd"])
-            button = self.get_element(self.elements["button_login"])
-        except Exception as e:
-            self.loger.store("E", "CG::login", e)
+        login = self.get_element(self.elements["username"])
+        passwd = self.get_element(self.elements["password"])
+        button = self.get_element(self.elements["btn_signin"])
+
+        if not login or not passwd or not button:
+            self.loger.store("E", "CG", "login",
+                             "Не удалось получить элементы!")
             return False
 
         login.send_keys(user_name)
@@ -60,41 +64,61 @@ class CyberGhost(object):
         except exceptions.TimeoutException:
             self.load_stop()
 
+        if "account" not in self.driver.current_url:
+            self.loger.store("E", "CG", "login", "Вход не удался!!!")
+            return False
+        text = None
         while True:
-            text = self.get_element(self.elements["check_login"])
+            text = self.get_element(self.elements["login_text"])
             user_name = user_name.upper()
             if user_name in text.text:
                 break
 
         self.load_stop()
+        self.loger.store("I", "CG", "login", "Ок логин: %s" % text.text)
+        return True
 
     def run_check(self, key):
-        self.loger.store("I", "CG::run_check", "Start key checking KEY:%s"
-                         % key)
-        self.__key_input_activate()
-        self.__send_key(key)
-        return self.__get_alert_text()
+        self.loger.store("A", "CG", "run_check", "Чекаем ключ: %s" % key)
+        if not self.__key_input_activate():
+            self.loger.store("E", "CG", "run_check", "__key_input_activate() "
+                                                     "вернул False!")
+            return False
+        if not self.__send_key(key):
+            self.loger.store("E", "CG", "run_check", "__send_key(key) "
+                                                     "вернул False!")
+            return False
+        if self.__get_alert_text():
+            self.loger.store("A", "CG", "run_check",
+                             "Ключ ушспешно активирован")
+            return True
+        else:
+            self.loger.store("E", "CG", "run_check", "__get_alert_text() "
+                                                     "вернул False!")
+            return False
 
     def __key_input_activate(self):
-        try:
-            show_form = self.get_element(self.elements['show_keys_form'])
-            show_form.send_keys(Keys.RETURN)
-        except Exception as e:
-            self.loger.store("E", "CG::key_input_activate", e)
-            return False
-        else:
-            self.loger.store("E", "CG::key_input_activate", "OK")
+        show_form = self.get_element(self.elements['key_input_show'])
+        if show_form:
+            self.loger.store("I", "CG", "__key_input_activate", "Ок")
+            try:
+                show_form.send_keys(Keys.RETURN)
+            except exceptions.StaleElementReferenceException:
+                self.driver.refresh()
+                return self.__key_input_activate()
             return True
+        else:
+            self.loger.store("E", "CG", "__key_input_activate",
+                             "Не удалось получить key_input_show")
+            return False
 
     def __send_key(self, key):
-        try:
-            key_input = self.get_element(self.elements['input_key'])
-            button = self.get_element(self.elements['button_key'])
-        except Exception as e:
-            self.loger.store("E", "CG::check_key", e)
-            return
-        else:
-            self.loger.store("E", "CG::check_key", "OK")
+        key_input = self.get_element(self.elements['key_input'])
+        button = self.get_element(self.elements['key_send'])
+        if not button or not key_input:
+            self.loger.store("E", "CG", "__send_key",
+                             "Не удалось получить key_input или key_send")
+            return False
 
         key_input.clear()
         key_input.send_keys(key)
@@ -102,28 +126,31 @@ class CyberGhost(object):
         try:
             button.click()
         except exceptions.TimeoutException:
-            self.driver.execute_script('window.stop();')
+            self.load_stop()
+        self.loger.store("I", "CG", "__send_key", "Элементы получены. Ок")
+        return True
 
     def __get_alert_text(self):
-        try:
-            text = self.get_element(self.elements["alert_text"]).text
-            self.loger.store("I", "CG::get_alert_text", text)
-
-            if self.result_text["not_found"] in text or self.result_text[
-                "activated"] in text:
-                button = self.get_element(self.elements["alert_button"])
-            else:
-                button = self.get_element(self.elements["activation_button"])
-            button.click()
-
-            plan = self.get_element(self.elements["plan_text"]).text
-            self.loger.store("A", "CG::get_alert_text", plan)
-            return self.plan_text not in plan
-        except Exception as e:
-            self.loger.store("E", "CG", e)
+        alert_text = self.get_element(self.elements["alert_text"])
+        if not alert_text:
+            self.loger.store("E", "CG", "__get_alert_text",
+                             "Не удалось получить alert_text")
             return False
+        self.loger.store("I", "CG", "__get_alert_text",
+                         "Алерт текс равен %s" % alert_text.text)
+
+        result = self.result_text["done"] in alert_text.text
+        if result:
+            button = self.get_element(self.elements["alert_btn_ok"])
         else:
-            self.loger.store("I", "CG::get_alert_text", "OK")
+            button = self.get_element(self.elements["alert_btn_cancel"])
+
+        try:
+            button.click()
+        except exceptions.TimeoutException:
+            self.load_stop()
+
+        return result
 
     def __load_end(self, msg):
         while not (msg in self.driver.title):
@@ -138,9 +165,3 @@ class CyberGhost(object):
             return element
         except exceptions.TimeoutException:
             return None
-
-    def __del__(self):
-        try:
-            self.driver.close()
-        except AttributeError:
-            pass

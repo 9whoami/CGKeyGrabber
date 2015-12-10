@@ -1,6 +1,6 @@
 # -*- coding: cp1251 -*-
 __author__ = 'whoami'
-__version__ = '0.0.0 Alpha'
+__version__ = '1.0.0 Beta'
 
 from threading import Thread
 from sys import exit
@@ -16,47 +16,45 @@ files = dict(
     story="history.txt",
     users="users.txt"
 )
+
 interval = 60
 cur_page = 95
+
 urls = dict(
     cyber="https://account.cyberghostvpn.com/en_us/login",
-    rs_load="http://forum.rsload.net/cat-kryaki-seriyniki-varez/topic-" \
-            "4820-page-%d.html",
+    rs_load="http://forum.rsload.net/",
     rs_load_rss="http://forum.rsload.net/topic4820/rss.xml"
 )
 
 elements = dict(
     cg=dict(
-        cancel_key=".//*[@id='account']/div[1]/div[2]/div[3]/div[3]/button[2]",
-        check_login=".//*[@id='nav-logout']/a",
-        login="/html/body/div[1]/div/div/div[2]/form/div/input[1]",
-        passwd="/html/body/div[1]/div/div/div[2]/form/div/input[2]",
-        button_login="/html/body/div[1]/div/div/div[2]/form/div/button",
-        show_keys_form="/html/body/div[1]/div/div/div[1]/div[3]/div[1]/" \
-                       "div[1]/div[2]/div[1]/div[3]/a",
-        input_key="/html/body/div[1]/div/div/div[1]/div[3]/div[1]/div[1]/" \
-                  "div[2]/div[3]/div[2]/input",
-        button_key="/html/body/div[1]/div/div/div[1]/div[3]/div[1]/div[1]/" \
-                   "div[2]/div[3]/div[3]/button[1]",
-        alert_text="/html/body/div[4]/div/div/div[2]/div/strong",
-        alert_button="/html/body/div[4]/div/div/div[3]/button",
-        activation_button="/html/body/div[4]/div/div/div[3]/button[1]",
-        plan_text="/html/body/div[1]/div/div/div[1]/div[3]/div[1]/div[1]/" \
-                  "div[2]/div[1]/div[2]"),
+        username=".//*[@id='loginForm']/div/input[1]",
+        password=".//*[@id='loginForm']/div/input[2]",
+        btn_signin=".//*[@id='loginForm']/div/button",
+        login_text=".//*[@id='nav-logout']/a",
+
+        key_input_show=".//*[@id='account']/div[1]/div[2]/div[1]/div[3]/a",
+        key_input=".//*[@id='account']/div[1]/div[2]/div[3]/div[2]/input",
+        key_send=".//*[@id='account']/div[1]/div[2]/div[3]/div[3]/button[1]",
+
+        alert_text=".//*[@id='ng-app']/body/div[4]/div/div/div[1]/h3",
+        alert_btn_cancel=".//*[@id='ng-app']/body/div[4]/div/div/div[3]/button",
+        alert_btn_ok=".//*[@id='ng-app']/body/div[4]/div/div/div[3]/button[1]",
+
+        plan_name=".//*[@id='account']/div[1]/div[2]/div[1]/div[2]"),
+
     rs=dict(
-        max_page=".//*[@id='board_index']/div[1]/div/div[2]/ol/li[1]/a",
-        keys='.//blockquote/p/span[@class="texthide"]',
         is_login="/html/body/div[2]/form[1]/fieldset/dl/dt[1]/a/b",
         input_login="/html/body/div[2]/form[1]/fieldset/label[1]/input",
         input_passwd="/html/body/div[2]/form[1]/fieldset/label[2]/input",
         btn="/html/body/div[2]/form[1]/fieldset/div[1]/span/span/input")
 )
 
-result_text = dict(not_found="Activation key not found",
-                   activated="Activation key already used",
-                   done="Activate your subscription")
+result_text = dict(not_found="invalid",
+                   activated="is already activated",
+                   done="subscription")
 
-plan_text = "Free Plan"
+# plan_text = "Free Plan"
 
 headers = [(
     'User-agent',
@@ -73,7 +71,7 @@ def get_cg_user(file):
 
     try:
         user = buf.pop()
-    except IndexError as e:
+    except IndexError:
         return False
 
     with open(file, "w") as f:
@@ -91,17 +89,19 @@ def write_to_file(fname, text):
 
 
 def input_wait(msg):
-    msg[0] = input("Type to quit: ")
+    msg[0] = input("Type to quit:\n")
+    if "None" not in msg:
+        print("Программа будет завершена...")
 
 if __name__ == "__main__":
     loger = Logger()
-    loger.store("I", "SYSTEM", "=============================================")
+    loger.store("I", "SYSTEM", "HELLO",
+                "<=================HELLO=======================>")
 
     cg = CyberGhost(
         loger=loger,
         elements=elements["cg"],
         result_text=result_text,
-        plan_text=plan_text,
         url=urls["cyber"]
     )
     rs_load = RsLoad(
@@ -113,9 +113,12 @@ if __name__ == "__main__":
         loger=loger,
         history=files["story"])
 
-    loger.store("I", "SYSTEM", "Компоненты загружены и готовы к работе")
+    loger.store("I", "SYSTEM", "", "Компоненты загружены и готовы к работе")
     if rs_load.signin():
         cg_users = get_cg_user(files["users"])
+        thread = Thread(target=input_wait, args=(msg,))
+        thread.setDaemon(True)
+        thread.start()
         while True:
             try:
                 keys = rs_load.get_all_keys()
@@ -127,17 +130,16 @@ if __name__ == "__main__":
                             write_to_file(files["out"], cg_users)
                             cg_users = get_cg_user(files["users"])
                             cg.login(tuple(cg_users.split(":")))
+                        key += "\n"
                         write_to_file(files["story"], key)
                     cg.driver_stop()
-                m = Thread(target=input_wait, args=(msg,))
-                m.start()
+                    print("Type to quit:\n")
                 for i in range(interval):
                     if "None" not in msg:
                         raise KeyboardInterrupt
                     sleep(1)
-                if m.isAlive():
-                    m.join(2)
             except KeyboardInterrupt:
                 write_to_file(files["users"], cg_users)
-                print("Bye")
+                loger.store("I", "SYSTEM", "Bye",
+                            "<=========Работа программы завершена==========>")
                 break
