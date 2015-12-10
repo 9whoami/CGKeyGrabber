@@ -23,26 +23,16 @@ class RsLoad(object):
         self.headers = headers
         self.xpath = xpath
         dcap = dict(DesiredCapabilities.PHANTOMJS).copy()
-        dcap["phantomjs.page."\
-                  "settings.userAgent"] = ("Mozilla/5.0 (Windows NT "
-                                           "6.1; WOW64; rv:41.0) "
-                                           "Gecko/20100101 Firefox/41.0")
+        dcap["phantomjs.page." \
+             "settings.userAgent"] = ("Mozilla/5.0 (Windows NT "
+                                      "6.1; WOW64; rv:41.0) "
+                                      "Gecko/20100101 Firefox/41.0")
         dcap["browserName"] = ("Mozilla Firefox")
         self.driver = webdriver.PhantomJS(executable_path="phantomjs.exe",
                                           service_log_path=path.devnull,
                                           desired_capabilities=dcap
                                           )
         self.driver.set_window_size(1120, 550)  # optional
-
-    def max_page(self):
-        result = self.get_element(self.xpath["max_page"])
-        if not result:
-            return None
-        result = result.text
-        pattern = "[0-9]+"
-        max_page = re.findall(pattern, result)
-        self.loger.store("I", "RSLOAD", "max_page: Page count: %s" % max_page[0])
-        return max_page[0]
 
     def rw_file(self, data=None):
         try:
@@ -60,19 +50,24 @@ class RsLoad(object):
             self.loger.store("I", "RSLOAD", "rw_file: OK")
 
     def get_all_keys(self):
-        old_keys = self.rw_file()
-        pattern = r"([A-Z0-9])+-([A-Z0-9])+-([A-Z0-9])+-([A-Z0-9])+-([A-Z0-9])+-([A-Z0-9])+"
         try:
+            self.driver.get(self.url["rs_load_rss"])
+
             source = self.driver.page_source
+            pattern = r"([A-Z0-9])+-([A-Z0-9])+-([A-Z0-9])+-([A-Z0-9])+-" \
+                      "([A-Z0-9])+-([A-Z0-9])+"
             keys_list = re.finditer(pattern, source, re.MULTILINE)
             new_keys = []
+            old_keys = self.rw_file()
 
             for key in keys_list:
                 key = key.group()
                 if not key in old_keys:
                     new_keys.append(key)
 
-            self.loger.store("A", "RSLOAD", "get_all_keys: Найдено %d новых ключей: %s" % (len(new_keys), new_keys))
+            self.loger.store("A", "RSLOAD", "get_all_keys: Найдено %d " \
+                                            "новых ключей: %s"
+                             % (len(new_keys), new_keys))
 
             if new_keys:
                 return new_keys
@@ -92,16 +87,8 @@ class RsLoad(object):
             self.loger.store("E", "RSLOAD", "is_login: %s" % e)
             return False
 
-    def update(self):
-        self.driver.get(self.url % (self.cur_page))
-        max_page = int(self.max_page())
-        if self.cur_page != max_page:
-            self.driver.get(self.url % (max_page))
-            self.cur_page = max_page
-        return self.is_login()
-
     def signin(self):
-        self.driver.get(self.url % self.cur_page)
+        self.driver.get(self.url["rs_load"] % self.cur_page)
         login = self.get_element(self.xpath["input_login"])
         passwd = self.get_element(self.xpath["input_passwd"])
         btn = self.get_element(self.xpath["btn"])

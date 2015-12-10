@@ -20,7 +20,9 @@ interval = 60
 cur_page = 95
 urls = dict(
     cyber="https://account.cyberghostvpn.com/en_us/login",
-    rs_load="http://forum.rsload.net/cat-kryaki-seriyniki-varez/topic-4820-page-%d.html"
+    rs_load="http://forum.rsload.net/cat-kryaki-seriyniki-varez/topic-" \
+            "4820-page-%d.html",
+    rs_load_rss="http://forum.rsload.net/topic4820/rss.xml"
 )
 
 elements = dict(
@@ -30,13 +32,17 @@ elements = dict(
         login="/html/body/div[1]/div/div/div[2]/form/div/input[1]",
         passwd="/html/body/div[1]/div/div/div[2]/form/div/input[2]",
         button_login="/html/body/div[1]/div/div/div[2]/form/div/button",
-        show_keys_form="/html/body/div[1]/div/div/div[1]/div[3]/div[1]/div[1]/div[2]/div[1]/div[3]/a",
-        input_key="/html/body/div[1]/div/div/div[1]/div[3]/div[1]/div[1]/div[2]/div[3]/div[2]/input",
-        button_key="/html/body/div[1]/div/div/div[1]/div[3]/div[1]/div[1]/div[2]/div[3]/div[3]/button[1]",
+        show_keys_form="/html/body/div[1]/div/div/div[1]/div[3]/div[1]/" \
+                       "div[1]/div[2]/div[1]/div[3]/a",
+        input_key="/html/body/div[1]/div/div/div[1]/div[3]/div[1]/div[1]/" \
+                  "div[2]/div[3]/div[2]/input",
+        button_key="/html/body/div[1]/div/div/div[1]/div[3]/div[1]/div[1]/" \
+                   "div[2]/div[3]/div[3]/button[1]",
         alert_text="/html/body/div[4]/div/div/div[2]/div/strong",
         alert_button="/html/body/div[4]/div/div/div[3]/button",
         activation_button="/html/body/div[4]/div/div/div[3]/button[1]",
-        plan_text="/html/body/div[1]/div/div/div[1]/div[3]/div[1]/div[1]/div[2]/div[1]/div[2]"),
+        plan_text="/html/body/div[1]/div/div/div[1]/div[3]/div[1]/div[1]/" \
+                  "div[2]/div[1]/div[2]"),
     rs=dict(
         max_page=".//*[@id='board_index']/div[1]/div/div[2]/ol/li[1]/a",
         keys='.//blockquote/p/span[@class="texthide"]',
@@ -54,7 +60,8 @@ plan_text = "Free Plan"
 
 headers = [(
     'User-agent',
-    'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1'
+    'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 " \
+    "Fedora/3.0.1-1.fc9 Firefox/3.0.1'
 )]
 
 msg = ['None']
@@ -99,7 +106,7 @@ if __name__ == "__main__":
     )
     rs_load = RsLoad(
         user=rs_user,
-        url=urls["rs_load"],
+        url=urls,
         page=cur_page,
         headers=headers,
         xpath=elements["rs"],
@@ -111,12 +118,7 @@ if __name__ == "__main__":
         cg_users = get_cg_user(files["users"])
         while True:
             try:
-                if rs_load.update():
-                    keys = rs_load.get_all_keys()
-                else:
-                    loger.store("A", "SYSTEM", "rs_load.update вурнул false")
-                    write_to_file(files["users"], cg_users)
-                    raise KeyboardInterrupt
+                keys = rs_load.get_all_keys()
                 if keys:
                     cg.driver_start()
                     for key in keys:
