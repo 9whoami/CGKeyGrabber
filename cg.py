@@ -11,32 +11,38 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 class CyberGhost(object):
-    def __init__(self, user, loger, elements, result_text, plan_text, url):
+    def __init__(self, loger, elements, result_text, plan_text, url):
         super(CyberGhost, self).__init__()
         self.loger = loger
         self.elements = elements
         self.result_text = result_text
         self.plan_text = plan_text
         self.url = url
-        self.user_name, self.user_passwd = user
         self.response_timeout = 5
         self.max_script_run = 5
         self.page_load_timeout = 20
         self.impl_wait = 10
-        fp = webdriver.FirefoxProfile()
-
-        fp.set_preference("http.response.timeout", self.response_timeout)
-        fp.set_preference("dom.max_script_run_time", self.max_script_run)
-        self.driver = webdriver.Firefox(firefox_profile = fp)
-        self.driver.set_page_load_timeout(self.page_load_timeout)
-        self.driver.implicitly_wait(self.impl_wait)
+        self.driver = None
 
     def load_stop(self):
         self.driver.execute_script('window.stop();')
 
-    def login(self):
+    def driver_stop(self):
+        self.driver.close()
+
+    def driver_start(self):
+        fp = webdriver.FirefoxProfile()
+        fp.set_preference("http.response.timeout", self.response_timeout)
+        fp.set_preference("dom.max_script_run_time", self.max_script_run)
+
+        self.driver = webdriver.Firefox(firefox_profile=fp)
+        self.driver.set_page_load_timeout(self.page_load_timeout)
+        self.driver.implicitly_wait(self.impl_wait)
+
+    def login(self, userinfo):
+        user_name, password = userinfo
         self.loger.store("I", "CG::login", "Sign in username:%s, password:%s"
-                         % (self.user_name, self.user_passwd))
+                         % (user_name, password))
         self.driver.get(self.url)
         try:
             login = self.get_element(self.elements["login"])
@@ -46,32 +52,26 @@ class CyberGhost(object):
             self.loger.store("E", "CG::login", e)
             return False
 
-        login.send_keys(self.user_name)
-        passwd.send_keys(self.user_passwd)
+        login.send_keys(user_name)
+        passwd.send_keys(password)
+
         try:
             button.click()
         except exceptions.TimeoutException:
             self.load_stop()
-        self.__load_end('Management')
-        text = self.get_element(self.elements["check_login"])
-        user_name = self.user_name.upper()
-        if user_name in text.text:
-            self.loger.store("I", "CG::login", "OK")
-            self.load_stop()
-            self.__key_input_activate()
-            return True
-        else:
-            self.loger.store("I", "CG::login", text.text)
-            return False
+
+        while True:
+            text = self.get_element(self.elements["check_login"])
+            user_name = user_name.upper()
+            if user_name in text.text:
+                break
+
+        self.load_stop()
 
     def run_check(self, key):
         self.loger.store("I", "CG::run_check", "Start key checking KEY:%s"
                          % key)
-        # try:
-        #     self.driver.refresh()
-        # except exceptions.TimeoutException:
-        #     self.load_stop()
-        # self.__key_input_activate()
+        self.__key_input_activate()
         self.__send_key(key)
         return self.__get_alert_text()
 
@@ -109,12 +109,13 @@ class CyberGhost(object):
             text = self.get_element(self.elements["alert_text"]).text
             self.loger.store("I", "CG::get_alert_text", text)
 
-            if self.result_text["not_found"] in text or self.result_text["activated"] in text:
+            if self.result_text["not_found"] in text or self.result_text[
+                "activated"] in text:
                 button = self.get_element(self.elements["alert_button"])
             else:
                 button = self.get_element(self.elements["activation_button"])
             button.click()
-            sleep(3)
+
             plan = self.get_element(self.elements["plan_text"]).text
             self.loger.store("A", "CG::get_alert_text", plan)
             return self.plan_text not in plan
@@ -139,4 +140,7 @@ class CyberGhost(object):
             return None
 
     def __del__(self):
-        self.driver.close()
+        try:
+            self.driver.close()
+        except AttributeError:
+            pass

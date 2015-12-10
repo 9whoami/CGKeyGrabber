@@ -75,7 +75,6 @@ class RsLoad(object):
             self.loger.store("A", "RSLOAD", "get_all_keys: Найдено %d новых ключей: %s" % (len(new_keys), new_keys))
 
             if new_keys:
-                self.rw_file(new_keys)
                 return new_keys
             else:
                 return None

@@ -2,6 +2,7 @@
 __author__ = 'whoami'
 __version__ = '0.0.0 Alpha'
 
+from threading import Thread
 from sys import exit
 from time import sleep
 from cg import *
@@ -56,6 +57,8 @@ headers = [(
     'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1'
 )]
 
+msg = ['None']
+
 
 def get_cg_user(file):
     with open(file, "r") as f:
@@ -69,26 +72,25 @@ def get_cg_user(file):
     with open(file, "w") as f:
         f.writelines(buf)
 
+    if not user:
+        loger.store("E", "SYSTEM", "No cyberghost account!")
+        exit(1)
     return user
 
 
 def write_to_file(fname, text):
-    text += '\n'
     with open(fname, "a") as f:
         f.write(text)
 
+
+def input_wait(msg):
+    msg[0] = input("Type to quit: ")
 
 if __name__ == "__main__":
     loger = Logger()
     loger.store("I", "SYSTEM", "=============================================")
 
-    cg_users = get_cg_user(files["users"])
-    if not cg_users:
-        loger.store("E", "SYSTEM", "No cyberghost account!")
-        exit(1)
-
     cg = CyberGhost(
-        user=tuple(cg_users.split(":")),
         loger=loger,
         elements=elements["cg"],
         result_text=result_text,
@@ -106,6 +108,7 @@ if __name__ == "__main__":
 
     loger.store("I", "SYSTEM", "Компоненты загружены и готовы к работе")
     if rs_load.signin():
+        cg_users = get_cg_user(files["users"])
         while True:
             try:
                 if rs_load.update():
@@ -113,28 +116,26 @@ if __name__ == "__main__":
                 else:
                     loger.store("A", "SYSTEM", "rs_load.update вурнул false")
                     write_to_file(files["users"], cg_users)
-                    break
+                    raise KeyboardInterrupt
                 if keys:
-                    cg.login()
+                    cg.driver_start()
                     for key in keys:
+                        cg.login(tuple(cg_users.split(":")))
                         if cg.run_check(key=key):
                             write_to_file(files["out"], cg_users)
-                            del cg
                             cg_users = get_cg_user(files["users"])
-                            if not cg_users:
-                                loger.store("E", "SYSTEM", "No cyberghost account!")
-                                exit(1)
-                            cg = CyberGhost(
-                                user=tuple(cg_users.split(":")),
-                                loger=loger,
-                                elements=elements["cg"],
-                                result_text=result_text,
-                                plan_text=plan_text,
-                                url=urls["cyber"]
-                            )
-                            cg.login()
+                            cg.login(tuple(cg_users.split(":")))
+                        write_to_file(files["story"], key)
+                    cg.driver_stop()
+                m = Thread(target=input_wait, args=(msg,))
+                m.start()
                 for i in range(interval):
+                    if "None" not in msg:
+                        raise KeyboardInterrupt
                     sleep(1)
+                if m.isAlive():
+                    m.join(2)
             except KeyboardInterrupt:
                 write_to_file(files["users"], cg_users)
                 print("Bye")
+                break
