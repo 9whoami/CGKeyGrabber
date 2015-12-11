@@ -22,6 +22,9 @@ class CyberGhost(object):
         self.page_load_timeout = 20
         self.impl_wait = 10
         self.driver = None
+        self.fp = webdriver.FirefoxProfile()
+        self.fp.set_preference("http.response.timeout", self.response_timeout)
+        self.fp.set_preference("dom.max_script_run_time", self.max_script_run)
 
     def load_stop(self):
         self.driver.execute_script('window.stop();')
@@ -32,11 +35,8 @@ class CyberGhost(object):
 
     def driver_start(self):
         self.loger.store("I", "CG", "driver_start", "Запуск драйвера...")
-        fp = webdriver.FirefoxProfile()
-        fp.set_preference("http.response.timeout", self.response_timeout)
-        fp.set_preference("dom.max_script_run_time", self.max_script_run)
 
-        self.driver = webdriver.Firefox(firefox_profile=fp)
+        self.driver = webdriver.Firefox(firefox_profile=self.fp)
         self.driver.set_page_load_timeout(self.page_load_timeout)
         self.driver.implicitly_wait(self.impl_wait)
 
@@ -139,9 +139,12 @@ class CyberGhost(object):
         self.loger.store("I", "CG", "__get_alert_text",
                          "Алерт текс равен %s" % alert_text.text)
 
-        result = self.result_text["done"] in alert_text.text
+        result = self.result_text["activated"] not in alert_text.text
         if result:
             button = self.get_element(self.elements["alert_btn_ok"])
+            if not button:
+                result = False
+                button = self.get_element(self.elements["alert_btn_cancel"])
         else:
             button = self.get_element(self.elements["alert_btn_cancel"])
 

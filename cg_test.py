@@ -85,20 +85,20 @@ def input_wait(msg):
 if __name__ == "__main__":
     loger = Logger()
 
-    # cg_users = get_cg_user(files["users"])
-    # if not cg_users:
-    #     loger.store("E", "SYSTEM", "No cyberghost account!")
-    #     exit(1)
-    #
-    # cg = CyberGhost(
-    #     loger=loger,
-    #     elements=elements["cg"],
-    #     result_text=result_text,
-    #     url=urls["cyber"]
-    # )
+    cg_users = get_cg_user(files["users"])
+    if not cg_users:
+        loger.store("E", "SYSTEM", "No cyberghost account!")
+        exit(1)
 
-    # test_key = "CHIPX2015-YJ8QE-UGDJ8-RBDCB-BBSM2-HXNFC"
-    import sys
+    cg = CyberGhost(
+        loger=loger,
+        elements=elements["cg"],
+        result_text=result_text,
+        url=urls["cyber"]
+    )
+
+    test_key = "CHIPX2015-YJ8QE-UGDJ8-RBDCB-BBSM2-HXNFC"
+
     msg = ['None']
     m = Thread(target=input_wait, args=(msg,))
     m.setDaemon(True)
@@ -109,13 +109,11 @@ if __name__ == "__main__":
                 if "None" not in msg:
                     raise KeyboardInterrupt
                 sleep(1)
-            print(msg)
         except KeyboardInterrupt:
             print("Bye")
-            print(msg)
-            sys.exit(1)
+            break
 
-    # cg.driver_start()
-    # cg.login(tuple(cg_users.split(":")))
-    # cg.run_check(test_key)
-    # cg.driver_stop()
+    cg.driver_start()
+    cg.login(tuple(cg_users.split(":")))
+    cg.run_check(test_key)
+    cg.driver_stop()

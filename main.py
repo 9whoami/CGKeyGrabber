@@ -1,6 +1,6 @@
 # -*- coding: cp1251 -*-
 __author__ = 'whoami'
-__version__ = '1.0.0 Beta'
+__version__ = '1.0.1 Beta'
 
 from threading import Thread
 from sys import exit
@@ -50,11 +50,8 @@ elements = dict(
         btn="/html/body/div[2]/form[1]/fieldset/div[1]/span/span/input")
 )
 
-result_text = dict(not_found="invalid",
-                   activated="is already activated",
-                   done="subscription")
-
-# plan_text = "Free Plan"
+result_text = dict(activated="Activation",
+                   done="activate")
 
 headers = [(
     'User-agent',
@@ -129,7 +126,6 @@ if __name__ == "__main__":
                         if cg.run_check(key=key):
                             write_to_file(files["out"], cg_users)
                             cg_users = get_cg_user(files["users"])
-                            cg.login(tuple(cg_users.split(":")))
                         key += "\n"
                         write_to_file(files["story"], key)
                     cg.driver_stop()
