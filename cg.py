@@ -22,9 +22,6 @@ class CyberGhost(object):
         self.page_load_timeout = 20
         self.impl_wait = 10
         self.driver = None
-        self.fp = webdriver.FirefoxProfile()
-        self.fp.set_preference("http.response.timeout", self.response_timeout)
-        self.fp.set_preference("dom.max_script_run_time", self.max_script_run)
 
     def load_stop(self):
         self.driver.execute_script('window.stop();')
@@ -36,6 +33,9 @@ class CyberGhost(object):
     def driver_start(self):
         self.loger.store("I", "CG", "driver_start", "Запуск драйвера...")
 
+        self.fp = webdriver.FirefoxProfile()
+        self.fp.set_preference("http.response.timeout", self.response_timeout)
+        self.fp.set_preference("dom.max_script_run_time", self.max_script_run)
         self.driver = webdriver.Firefox(firefox_profile=self.fp)
         self.driver.set_page_load_timeout(self.page_load_timeout)
         self.driver.implicitly_wait(self.impl_wait)
@@ -61,7 +61,8 @@ class CyberGhost(object):
 
         try:
             button.click()
-        except exceptions.TimeoutException:
+        except (exceptions.TimeoutException,
+                exceptions.StaleElementReferenceException):
             self.load_stop()
 
         if "account" not in self.driver.current_url:

@@ -28,8 +28,7 @@ class RsLoad(object):
                                       "6.1; WOW64; rv:41.0) "
                                       "Gecko/20100101 Firefox/41.0")
         dcap["browserName"] = ("Mozilla Firefox")
-        self.driver = webdriver.PhantomJS(executable_path="phantomjs.exe",
-                                          service_log_path=path.devnull,
+        self.driver = webdriver.PhantomJS(service_log_path=path.devnull,
                                           desired_capabilities=dcap
                                           )
         self.driver.set_window_size(1120, 550)  # optional

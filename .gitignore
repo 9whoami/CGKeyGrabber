@@ -1,14 +1,3 @@
-.idea/.name
-.idea/CGKeyGrabber.iml
-.idea/inspectionProfiles/profiles_settings.xml
-.idea/inspectionProfiles/Project_Default.xml
-.idea/misc.xml
-.idea/modules.xml
-.idea/vcs.xml
-.idea/workspace.xml
-lesson.py
-log.txt
-out.txt
-history.txt
-users.txt
+.idea/
+*.txt
 *.pyc
